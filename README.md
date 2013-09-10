@@ -1,6 +1,6 @@
 HAPI Terser Tests
 ==================
-This project contains HAPI examples. All the code is explained in my blog:
+This project contains HAPI (HL7 application programming interface) examples. All the code is explained in my blog:
 
 http://www.hl7integrationengineer.com/category/hapi/
 
