@@ -4,7 +4,6 @@ This project contains HAPI (HL7 application programming interface) examples. All
 
 http://www.hl7integrationengineer.com/category/hapi/
 
-
 In this project you can find how to:
 
 - Create a Terser
