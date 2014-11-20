@@ -4,83 +4,115 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.parser.PipeParser;
 import ca.uhn.hl7v2.util.Terser;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
 public class TerserTest {
 
+    Message message;
+
+    Terser terser;
+
+    @Before
+    public void setup() throws Exception{
+        String m = "MSH|^~\\&|hl7Integration|hl7Integration|||||ADT^A01|||2.3|\r" +
+                "EVN|A01|20130617154644\r" +
+                "PID|1|465 306 5961||407623|Wood^Patrick^^^MR||19700101|1|||High Street^^Oxford^^Ox1 4DP~George St^^Oxford^^Ox1 5AP|||||||\r" +
+                "NK1|1|\r"+
+                "NK1|2|\r"+
+                "PV1|1||Location||||||||||||||||261938_6_201306171546|||||||||||||||||||||||||20130617134644|||||||||";
+
+
+        //Parse the message
+        PipeParser pipeParser = new PipeParser();
+        this.message = pipeParser.parse(m);
+        this.terser = new Terser(message);
+    }
+
     @Test
-    public void testTerser(){
+    public void testAccessSimpleFields() throws Exception{
 
-        try {
+        //Patient Id
+        assertEquals("465 306 5961", terser.get("/PID-2"));
+        //Dob
+        assertEquals("19700101", terser.get("/PID-7"));
+        //Patient Surname
+        assertEquals("Wood", terser.get("/PID-5-1"));
+        //Patient First Name
+        assertEquals("Patrick", terser.get("/PID-5-2"));
+    }
 
-            String m = "MSH|^~\\&|hl7Integration|hl7Integration|||||ADT^A01|||2.3|\r" +
-                    "EVN|A01|20130617154644\r" +
-                    "PID|1|465 306 5961||407623|Wood^Patrick^^^MR||19700101|1|||High Street^^Oxford^^Ox1 4DP~George St^^Oxford^^Ox1 5AP|||||||\r" +
-                    "NK1|1|\r"+
-                    "NK1|2|\r"+
-                    "PV1|1||Location||||||||||||||||261938_6_201306171546|||||||||||||||||||||||||20130617134644|||||||||";
+    @Test
+    public void testAccessSegmentRepetitions() throws Exception{
 
+        //First Next of Kin Id
+        assertEquals("1", terser.get("NK1(0)-1"));
 
-            //Create the Terser
-            PipeParser pipeParser = new PipeParser();
-            Message message = pipeParser.parse(m);
-            Terser terser = new Terser(message);
+        //Second Next of Kin Id
+        assertEquals("2", terser.get("NK1(1)-1"));
+    }
 
-            //Use Terser to get simple fields
-            assert terser.get("/PID-2").equals("465 306 5961");      //Patient Id
-            assert terser.get("/PID-7").equals("19700101");          //Dob
+    @Test
+    public void testAccessFieldRepetitions() throws Exception{
+        //Primary Address: Street
+        assertEquals("High Street", terser.get("/PID-11(0)-1"));
+        //Primary Address: PostCode
+        assertEquals("Ox1 4DP", terser.get("/PID-11(0)-5"));
+        //Secondary Address: Street
+        assertEquals("George St", terser.get("/PID-11(1)-1"));
+        //Secondary Address: PostCode
+        assertEquals("Ox1 5AP", terser.get("/PID-11(1)-5"));
+    }
 
-            //Use Terser to get components
-            assert terser.get("/PID-5-1").equals("Wood");            //Patient Surname
-            assert terser.get("/PID-5-2").equals("Patrick");         //Patient First Name
+    @Test
+    public void testUpdateSimpleFields() throws Exception{
+        //Update Patient Id
+        terser.set("/PID-2", "123456");
+        assertEquals("123456", terser.get("/PID-2"));
 
-            //Use terser to get segment repetitions
-            assert terser.get("NK1(0)-1").equals("1");               //First Next of Kin Id
-            assert terser.get("NK1(1)-1").equals("2");               //Second Next of Kin Id
+        //Update Dob
+        terser.set("/PID-7", "19800101");
+        assertEquals("19800101", terser.get("/PID-7"));
+    }
 
-            //Use terser to get field repetitions
-            assert terser.get("/PID-11(0)-1").equals("High Street"); //Primary Address: Street
-            assert terser.get("/PID-11(0)-5").equals("Ox1 4DP");     //Primary Address: PostCode
+    @Test
+    public void testSetComponents() throws Exception{
+        //Patient Surname
+        terser.set("/PID-5-1", "Jones");
+        assertEquals("Jones", terser.get("/PID-5-1"));
 
-            assert terser.get("/PID-11(1)-1").equals("George St");   //Secondary Address: Street
-            assert terser.get("/PID-11(1)-5").equals("Ox1 5AP");     //Secondary Address: PostCode
+    }
 
-            //Use terser to set simple Fields
-            terser.set("/PID-2", "123456");
-            assert terser.get("/PID-2").equals("123456");            //Patient Id
+    @Test
+    public void testSetTypeFields() throws Exception{
+        //Add a secondary address
+        terser.set("/PID-11(1)-1", "Wellington Avenue");
+        assertEquals("Wellington Avenue", terser.get("/PID-11(1)-1"));
+    }
 
-            //Use terser to set components
-            terser.set("/PID-5-1", "Jones");
-            assert terser.get("/PID-5-1").equals("Jones");            //Patient Surname
+    @Test
+    public void testRecordRepetitions() throws Exception{
+        //Add a secondary address
+        terser.set("/PID-11(1)-1", "Wellington Avenue");
 
-            //Use terser to set type Fields
-            terser.set("/PID-11(1)-1", "Wellington Avenue");
-            assert terser.get("/PID-11(1)-1").equals("Wellington Avenue");   //Secondary Address: Street
-
-            //Record repetitions in a String List
-            List<String> listStrings = new ArrayList<String>();
-            int maxRepetitions = 5;
-            for (int i= 0; i < maxRepetitions; i++ ){
-                String value =  terser.get("PID-11("+i+")-1");
-                if(value != null){
-                    listStrings.add(value);
-                }else{
-                    break;
-                }
+        List<String> listStrings = new ArrayList<String>();
+        int maxRepetitions = 5;
+        for (int i= 0; i < maxRepetitions; i++ ){
+            String value =  terser.get("PID-11("+i+")-1");
+            if(value != null){
+                listStrings.add(value);
+            }else{
+                break;
             }
-
-            assert listStrings.get(0).equals("High Street");
-            assert listStrings.get(1).equals("Wellington Avenue");
-
-
-
-        } catch (HL7Exception e) {
-            e.printStackTrace();
         }
 
+        assertEquals("High Street", listStrings.get(0));
+        assertEquals("Wellington Avenue", listStrings.get(1));
     }
 
 }
