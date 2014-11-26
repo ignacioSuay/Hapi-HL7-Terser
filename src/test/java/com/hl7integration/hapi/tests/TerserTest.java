@@ -23,8 +23,8 @@ public class TerserTest {
         String m = "MSH|^~\\&|hl7Integration|hl7Integration|||||ADT^A01|||2.3|\r" +
                 "EVN|A01|20130617154644\r" +
                 "PID|1|465 306 5961||407623|Wood^Patrick^^^MR||19700101|1|||High Street^^Oxford^^Ox1 4DP~George St^^Oxford^^Ox1 5AP|||||||\r" +
-                "NK1|1|\r"+
-                "NK1|2|\r"+
+                "NK1|1|Wood^John^^^MR|Father||999-9999\r"+
+                "NK1|2|Jones^Georgie^^^MSS|MOTHER||999-9999\r"+
                 "PV1|1||Location||||||||||||||||261938_6_201306171546|||||||||||||||||||||||||20130617134644|||||||||";
 
 
